@@ -1,0 +1,29 @@
+# .gitignore
+
+# .git directory
+.git/
+
+# IDE configuration files
+.idea/
+
+# build and output files
+node_modules/
+dist/
+assets/
+
+# nginx configuration
+nginx/
+
+# PHP related files
+php/
+vendor/
+composer.lock
+
+#MySQL DB Files
+mysql-data/
+
+# miscellaneous files
+*.iml
+*.log
+*.env*
+.DS_Store
