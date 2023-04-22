@@ -5,6 +5,12 @@ namespace App\Discourse;
 use Dotenv\Dotenv;
 
 /**
+ * TODO: refactor
+ *  - separation of concerns
+ *  - dependency injection
+ *  - typed properties
+ *  - better error handling
+ *
  * Class SSOLogin
  * Single sign-on authentication via Discourse
  * Saves the login key
