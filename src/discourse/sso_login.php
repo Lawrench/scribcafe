@@ -2,6 +2,8 @@
 
 namespace App\Discourse;
 
+use Dotenv\Dotenv;
+
 /**
  * Class SSOLogin
  * Single sign-on authentication via Discourse
@@ -10,11 +12,6 @@ namespace App\Discourse;
  */
 class SSOLogin
 {
-    private const DISCOURSE_URL = 'http://forums.scribcafe.com';
-
-    // .env file SSO_SECRET=imap.gmail.com
-    // access it with env("SSO_SECRET", null)
-    private const SSO_SECRET = 'FlwBcyLSbaAs6vF0DBZd'; // TODO: Put in .env file
 
     /**
      * Init SSO login
@@ -22,7 +19,7 @@ class SSOLogin
      */
     public static function init(): void
     {
-        $currentLocation = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
+        $currentLocation = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
         if (self::isResponse()) {
             self::login($currentLocation);
         } else {
@@ -33,7 +30,7 @@ class SSOLogin
     /**
      * Get key
      * TODO: get key from database
-     * @param string $key
+     * @param  string  $key
      * @return mixed
      */
     private static function getKey(string $key): mixed
@@ -41,6 +38,7 @@ class SSOLogin
         if (isset($_SESSION[$key])) {
             return $_SESSION[$key];
         }
+
         return null;
     }
 
@@ -56,7 +54,7 @@ class SSOLogin
     /**
      * Validate the sso and log the user in
      * Sets the login key
-     * @param string $currentLocation
+     * @param  string  $currentLocation
      * @return void
      */
     private static function login(string $currentLocation): void
@@ -66,13 +64,20 @@ class SSOLogin
             header("Location: $currentLocation");
             die();
         }
-        $sso = $_GET['sso'];
-        $sig = $_GET['sig'];
+
+        $sso = $_GET['sso'] ?? '';
+        $sig = $_GET['sig'] ?? '';
+
+        // Validate the sso and sig parameters
+        if (!preg_match('/^[a-zA-Z0-9+\/]+={0,2}$/', $sso) || !preg_match('/^[a-fA-F0-9]{64}$/', $sig)) {
+            header('HTTP/1.1 400 Bad Request');
+            die('Invalid parameters.');
+        }
 
         // validate sso
-        if (hash_hmac('sha256', urldecode($sso), self::SSO_SECRET) !== $sig) {
-            header("HTTP/1.1 404 Not Found");
-            die();
+        if (hash_hmac('sha256', urldecode($sso), $_ENV('DISCOURSE_SSO_SECRET') ?? '') !== $sig) {
+            header("HTTP/1.1 400 Bad Request");
+            die('Invalid SSO Authentication');
         }
 
         $sso = urldecode($sso);
@@ -81,17 +86,18 @@ class SSOLogin
 
         $nonce = self::getKey('nonce');
         if ($query['nonce'] != $nonce) {
-            header("HTTP/1.1 404 Not Found");
+            header("HTTP/1.1 400 Bad Request");
             die();
         }
 
         self::setKey('login', $query);
-        header("Access-Control-Allow-Origin: *");
+        $allowOrigin = getenv('DISCOURSE_URL');
+        header("Access-Control-Allow-Origin: $allowOrigin");
     }
 
     /**
      * Redirect to discourse for login
-     * @param string $currentLocation
+     * @param  string  $currentLocation
      * @return void
      */
     private static function redirectAuth(string $currentLocation): void
@@ -114,12 +120,12 @@ class SSOLogin
 
         $request = [
             'sso' => $payload,
-            'sig' => hash_hmac('sha256', $payload, self::SSO_SECRET),
+            'sig' => hash_hmac('sha256', $payload, $_ENV('DISCOURSE_SSO_SECRET') ?? ''),
         ];
 
         $query = http_build_query($request);
 
-        $url = sprintf('%s/session/sso_provider?%s', self::DISCOURSE_URL, $query);
+        $url = sprintf('%s/session/sso_provider?%s', $_ENV('DISCOURSE_URL') ?? '', $query);
         header("Location: $url");
         die();
     }
@@ -127,8 +133,8 @@ class SSOLogin
     /**
      * Set key
      * TODO: save key in database
-     * @param string $key
-     * @param string|array $value
+     * @param  string  $key
+     * @param  string|array  $value
      * @return void
      */
     private static function setKey(string $key, mixed $value): void
