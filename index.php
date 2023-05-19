@@ -5,10 +5,6 @@ session_start();
 // AUTOLOAD
 require_once __DIR__ . '/vendor/autoload.php';
 
-// vlucas/phpdotenv
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->load();
-
 // SSO AUTHENTICATION
 require_once('src/discourse/sso_login.php');
 App\Discourse\SSOLogin::init();

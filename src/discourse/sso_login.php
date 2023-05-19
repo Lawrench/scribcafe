@@ -25,7 +25,8 @@ class SSOLogin
      */
     public static function init(): void
     {
-        $currentLocation = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
+        $scheme = $_SERVER['REQUEST_SCHEME'] ?? 'http'; // TODO: don't default to http
+        $currentLocation = $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
         if (self::isResponse()) {
             self::login($currentLocation);
         } else {
@@ -81,7 +82,7 @@ class SSOLogin
         }
 
         // validate sso
-        if (hash_hmac('sha256', urldecode($sso), $_ENV('DISCOURSE_SSO_SECRET') ?? '') !== $sig) {
+        if (hash_hmac('sha256', urldecode($sso), $_ENV['DISCOURSE_SSO_SECRET'] ?? '') !== $sig) {
             header("HTTP/1.1 400 Bad Request");
             die('Invalid SSO Authentication');
         }
@@ -126,12 +127,12 @@ class SSOLogin
 
         $request = [
             'sso' => $payload,
-            'sig' => hash_hmac('sha256', $payload, $_ENV('DISCOURSE_SSO_SECRET') ?? ''),
+            'sig' => hash_hmac('sha256', $payload, $_ENV['DISCOURSE_SSO_SECRET'] ?? ''),
         ];
 
         $query = http_build_query($request);
 
-        $url = sprintf('%s/session/sso_provider?%s', $_ENV('DISCOURSE_URL') ?? '', $query);
+        $url = sprintf('%s/session/sso_provider?%s', $_ENV['DISCOURSE_URL'] ?? '', $query);
         header("Location: $url");
         die();
     }
