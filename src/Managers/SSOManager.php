@@ -4,9 +4,9 @@ namespace App\Managers;
 
 class SSOManager
 {
-    private $sessionManager;
-    private $environmentManager;
-    private $httpManager;
+    private SessionManager $sessionManager;
+    private EnvironmentManager $environmentManager;
+    private HttpManager $httpManager;
 
     public function __construct(
         SessionManager $sessionManager,
@@ -19,43 +19,18 @@ class SSOManager
     }
 
     /**
-     * Redirect to discourse for login
-     * @param  string  $currentLocation
+     * Init SSO login
      * @return void
      */
-    public static function redirectAuth(string $currentLocation): void
+    public function init(): void
     {
-        // user is logged on
-        $session = new SessionManager(); // TODO: set this as a member or dep. injection once the function is extracted
-        $login = $session->get('login');
-        if ($login) {
-            return;
+        $scheme = $_SERVER['REQUEST_SCHEME'] ?? 'http'; // TODO: don't default to http
+        $currentLocation = $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
+        if ($this->httpManager->isResponse()) {
+            $this->login($currentLocation);
+        } else {
+            $this->redirectAuth($currentLocation);
         }
-
-        $nonce = hash('sha512', mt_rand());
-
-        $session = new SessionManager(); // TODO: set this as a member or dep. injection once the function is extracted
-        $session->set('nonce', $nonce);
-
-        $payload = base64_encode(
-            http_build_query([
-                'nonce' => $nonce,
-                'return_sso_url' => $currentLocation,
-            ])
-        );
-
-        $env = new EnvironmentManager(); /// todo: class member, dependency injection
-        $request = [
-            'sso' => $payload,
-            'sig' => hash_hmac('sha256', $payload, $env->get('DISCOURSE_SSO_SECRET')),
-        ];
-
-        $query = http_build_query($request);
-
-        $url = sprintf('%s/session/sso_provider?%s', $env->get('DISCOURSE_URL'), $query);
-
-        $httpManager = new HttpManager(); // TODO: dependency injection
-        $httpManager->redirectTo($url);
     }
 
     /**
@@ -64,70 +39,70 @@ class SSOManager
      * @param  string  $currentLocation
      * @return void
      */
-    public static function login(string $currentLocation): void
+    public function login(string $currentLocation): void
     {
-        $httpManager = new HttpManager(); // TODO: dependency injection
-        $session = new SessionManager(); // TODO: set this as a member or dep. injection once the function is extracted
-        $login = $session->get('login');
+        $login = $this->sessionManager->get('login');
         if ($login) {
-            $httpManager = new HttpManager(); // TODO: dependency injection
-            $httpManager->redirectTo($currentLocation);
+            $this->httpManager->redirectTo($currentLocation);
         }
 
-        $sso = $httpManager->getRequestParam('sso');
-        $sig = $httpManager->getRequestParam('sig');
+        $sso = $this->httpManager->getRequestParam('sso');
+        $sig = $this->httpManager->getRequestParam('sig');
 
         // Validate the sso and sig parameters
         if (!preg_match('/^[a-zA-Z0-9+\/]+={0,2}$/', $sso) || !preg_match('/^[a-fA-F0-9]{64}$/', $sig)) {
-            $httpManager->sendError(400);
+            $this->httpManager->sendError(400);
         }
 
         // validate sso
-        $env = new EnvironmentManager(); /// todo: class member, dependency injection
-        if (hash_hmac('sha256', urldecode($sso), $env->get('DISCOURSE_SSO_SECRET')) !== $sig) {
-            $httpManager->sendError(400);
+        if (hash_hmac('sha256', urldecode($sso), $this->environmentManager->get('DISCOURSE_SSO_SECRET')) !== $sig) {
+            $this->httpManager->sendError(400);
         }
 
         $sso = urldecode($sso);
         $query = [];
         parse_str(base64_decode($sso), $query);
 
-        $session = new SessionManager(); // TODO: set this as a member or dep. injection once the function is extracted
-        $nonce = $session->get('nonce');
+        $nonce = $this->sessionManager->get('nonce');
         if ($query['nonce'] != $nonce) {
-            $httpManager->sendError(400);
+            $this->httpManager->sendError(400);
         }
 
-        $session = new SessionManager();
-        $session->set('login', $query);
+        $this->sessionManager->set('login', $query);
         $allowOrigin = getenv('DISCOURSE_URL');
         header("Access-Control-Allow-Origin: $allowOrigin");
     }
 
     /**
-     * Init SSO login
+     * Redirect to discourse for login
+     * @param  string  $currentLocation
      * @return void
      */
-    public static function init(): void
+    public function redirectAuth(string $currentLocation): void
     {
-        $scheme = $_SERVER['REQUEST_SCHEME'] ?? 'http'; // TODO: don't default to http
-        $currentLocation = $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
-        if (HttpManager::isResponse()) {
-            SSOManager::login($currentLocation);
-        } else {
-            SSOManager::redirectAuth($currentLocation);
+        // user is logged on
+        $login = $this->sessionManager->get('login');
+        if ($login) {
+            return;
         }
-    }
 
-    public function createSSORequest()
-    { /* ... */
-    }
+        $nonce = hash('sha512', mt_rand());
+        $this->sessionManager->set('nonce', $nonce);
 
-    public function validateSSOResponse()
-    { /* ... */
-    }
+        $payload = base64_encode(
+            http_build_query([
+                'nonce' => $nonce,
+                'return_sso_url' => $currentLocation,
+            ])
+        );
 
-    public function loginUser()
-    { /* ... */
+        $request = [
+            'sso' => $payload,
+            'sig' => hash_hmac('sha256', $payload, $this->environmentManager->get('DISCOURSE_SSO_SECRET')),
+        ];
+
+        $query = http_build_query($request);
+        $url = sprintf('%s/session/sso_provider?%s', $this->environmentManager->get('DISCOURSE_URL'), $query);
+        $this->httpManager->redirectTo($url);
     }
 }
