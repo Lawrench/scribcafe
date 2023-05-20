@@ -1,13 +1,14 @@
 <?php
 
+use App\Managers\SSOManager;
+
 session_start();
 
 // AUTOLOAD
 require_once __DIR__ . '/vendor/autoload.php';
 
 // SSO AUTHENTICATION
-require_once('src/discourse/sso_login.php');
-App\Discourse\SSOLogin::init();
+SSOManager::init();
 
 // START
 
