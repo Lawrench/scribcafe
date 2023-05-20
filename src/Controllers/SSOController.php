@@ -11,10 +11,10 @@ class SSOController
 {
     public function init(): void
     {
-        $httpManager = new HttpService();
-        $environmentManager = new EnvironmentService();
-        $sessionManager = new SessionService();
-        $ssoManager = new SSOService($sessionManager, $environmentManager, $httpManager);
-        $ssoManager->init();
+        $httpService = new HttpService();
+        $environmentService = new EnvironmentService();
+        $sessionService = new SessionService();
+        $SSOService = new SSOService($sessionService, $environmentService, $httpService);
+        $SSOService->init();
     }
 }

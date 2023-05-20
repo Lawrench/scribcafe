@@ -9,13 +9,13 @@ class SSOService
     private HttpService $httpService;
 
     public function __construct(
-        SessionService $sessionManager,
-        EnvironmentService $environmentManager,
-        HttpService $httpManager
+        SessionService $sessionService,
+        EnvironmentService $environmentService,
+        HttpService $httpService
     ) {
-        $this->sessionService = $sessionManager;
-        $this->environmentService = $environmentManager;
-        $this->httpService = $httpManager;
+        $this->sessionService = $sessionService;
+        $this->environmentService = $environmentService;
+        $this->httpService = $httpService;
     }
 
     /**
@@ -41,11 +41,13 @@ class SSOService
      */
     public function login(string $currentLocation): void
     {
+        // check if user is logged in, if so redirect to current location
         $login = $this->sessionService->get('login');
         if ($login) {
             $this->httpService->redirectTo($currentLocation);
         }
 
+        // get sso and sig from the request
         $sso = $this->httpService->getRequestParam('sso');
         $sig = $this->httpService->getRequestParam('sig');
 
@@ -59,19 +61,30 @@ class SSOService
             $this->httpService->sendError(400);
         }
 
+        // Decode the URL-encoded SSO parameter
         $sso = urldecode($sso);
+
+        // Parse decoded SSO parameter into an associative array
         $query = [];
         parse_str(base64_decode($sso), $query);
 
+        // Get nonce value from session
         $nonce = $this->sessionService->get('nonce');
+
+        // Check if nonce value from SSO parameter matches session
         if ($query['nonce'] != $nonce) {
+            // If nonce values don't match, send a 400 Bad Request response
             $this->httpService->sendError(400);
         }
 
+        // Store SSO query parameters in session variable
         $this->sessionService->set('login', $query);
+
+        // Set Access-Control-Allow-Origin header to allow requests from DISCOURSE_URL
         $allowOrigin = getenv('DISCOURSE_URL');
         header("Access-Control-Allow-Origin: $allowOrigin");
     }
+
 
     /**
      * Redirect to discourse for login

@@ -4,7 +4,7 @@ namespace App\Services;
 
 /**
  * Class EnvironmentService
- * @package App\Managers
+ * @package App\Services
  * manage environment variables.
  */
 class EnvironmentService
