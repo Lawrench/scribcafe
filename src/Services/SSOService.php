@@ -24,7 +24,7 @@ class SSOService
      */
     public function init(): void
     {
-        $scheme = $_SERVER['REQUEST_SCHEME'] ?? 'http'; // TODO: don't default to http
+        $scheme = $_SERVER['REQUEST_SCHEME'] ?? 'https';
         $currentLocation = $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
         if ($this->httpService->isResponse()) {
             $this->login($currentLocation);
