@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Managers;
+namespace App\Services;
 
 use JetBrains\PhpStorm\NoReturn;
 
-class HttpManager
+class HttpService
 {
     /**
      * Get the value of a request parameter, with an optional default value.

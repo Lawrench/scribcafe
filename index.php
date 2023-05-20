@@ -1,9 +1,6 @@
 <?php
 
-use App\Managers\SSOManager;
-use App\Managers\EnvironmentManager;
-use App\Managers\HttpManager;
-use App\Managers\SessionManager;
+use App\Controllers\SSOController;
 
 session_start();
 
@@ -11,11 +8,8 @@ session_start();
 require_once __DIR__ . '/vendor/autoload.php';
 
 // SSO AUTHENTICATION
-$httpManager = new HttpManager();
-$environmentManager = new EnvironmentManager();
-$sessionManager = new SessionManager();
-$ssoManager = new SSOManager($sessionManager, $environmentManager, $httpManager);
-$ssoManager->init();
+$ssoController = new SSOController();
+$ssoController->init();
 
 // START
 

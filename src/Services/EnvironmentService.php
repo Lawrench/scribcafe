@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Managers;
+namespace App\Services;
 
 /**
- * Class EnvironmentManager
+ * Class EnvironmentService
  * @package App\Managers
  * manage environment variables.
  */
-class EnvironmentManager
+class EnvironmentService
 {
     /**
      * gets the value of an environment variable

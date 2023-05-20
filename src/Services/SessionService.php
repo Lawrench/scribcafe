@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Managers;
+namespace App\Services;
 
-class SessionManager
+class SessionService
 {
     /**
      * Get the session key or null
