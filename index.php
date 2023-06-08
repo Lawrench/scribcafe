@@ -1,6 +1,10 @@
 <?php
 
-use App\Controllers\SSOController;
+use App\Services\HttpService;
+use App\Services\EnvironmentService;
+use App\Services\SessionService;
+use App\Services\SSOService;
+use App\Services\RequestService;
 
 session_start();
 
@@ -8,8 +12,19 @@ session_start();
 require_once __DIR__ . '/vendor/autoload.php';
 
 // SSO AUTHENTICATION
-$ssoController = new SSOController();
-$ssoController->init();
+$httpService = new HttpService();
+$environmentService = new EnvironmentService();
+$sessionService = new SessionService();
+$requestService = new RequestService();
+
+$SSOService = new SSOService(
+    $sessionService,
+    $environmentService,
+    $httpService,
+    $requestService
+);
+
+$SSOService->init();
 
 // START
 

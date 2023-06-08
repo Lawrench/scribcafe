@@ -7,15 +7,18 @@ class SSOService
     private SessionService $sessionService;
     private EnvironmentService $environmentService;
     private HttpService $httpService;
+    private RequestService $requestService;
 
     public function __construct(
         SessionService $sessionService,
         EnvironmentService $environmentService,
-        HttpService $httpService
+        HttpService $httpService,
+        RequestService $requestService
     ) {
         $this->sessionService = $sessionService;
         $this->environmentService = $environmentService;
         $this->httpService = $httpService;
+        $this->requestService = $requestService;
     }
 
     /**
@@ -24,8 +27,9 @@ class SSOService
      */
     public function init(): void
     {
-        $scheme = $_SERVER['REQUEST_SCHEME'] ?? 'https';
-        $currentLocation = $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
+        $scheme = $this->requestService->get('REQUEST_SCHEME', 'https');
+        $currentLocation = $scheme . '://' . $this->requestService->get('HTTP_HOST') . $this->requestService->get('SCRIPT_NAME');
+
         if ($this->httpService->isResponse()) {
             $this->login($currentLocation);
         } else {
@@ -81,8 +85,8 @@ class SSOService
         $this->sessionService->set('login', $query);
 
         // Set Access-Control-Allow-Origin header to allow requests from DISCOURSE_URL
-        $allowOrigin = getenv('DISCOURSE_URL');
-        header("Access-Control-Allow-Origin: $allowOrigin");
+        $allowOrigin = $this->environmentService->get('DISCOURSE_URL');
+        $this->httpService->setHeader("Access-Control-Allow-Origin: $allowOrigin");
     }
 
 

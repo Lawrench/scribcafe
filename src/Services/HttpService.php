@@ -28,6 +28,7 @@ class HttpService
     }
 
     /**
+     * @codeCoverageIgnore header redirect, not tested
      * @param  string  $url
      * @return void
      */
@@ -40,7 +41,7 @@ class HttpService
 
     /**
      * Send an HTTP error status code and message
-     *
+     * @codeCoverageIgnore http response code is not tested
      * @param  int  $code  The HTTP status code to send.
      * @param  string  $message  An optional message to include in the response body.
      *
@@ -55,5 +56,16 @@ class HttpService
         }
 
         exit;
+    }
+
+    /**
+     * set header
+     * @codeCoverageIgnore header() is not tested, no business logic
+     * @param  string  $header
+     * @return void
+     */
+    public function setHeader(string $header): void
+    {
+        header($header);
     }
 }

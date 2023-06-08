@@ -1,5 +1,7 @@
 <?php
 
+// TODO: use library
+
 // TODO: DELETE ME
 function testDatabaseConnection($host, $user, $password, $database): void
 {

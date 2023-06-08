@@ -5,29 +5,40 @@ namespace App\Services;
 class SessionService
 {
     /**
-     * Get the session key or null
-     * TODO: get key from database
+     * Get the session
+     * This enables testing by mocking the $_SESSION variable
+     * @return array
+     */
+    protected function &getSession(): array
+    {
+        return $_SESSION;
+    }
+
+    /**
+     * Get a session variable
      * @param  string  $key
-     * @return null|string
+     * @return mixed
      */
     public function get(string $key): mixed
     {
-        if (isset($_SESSION[$key])) {
-            return $_SESSION[$key];
+        $session = &$this->getSession();
+
+        if (isset($session[$key])) {
+            return $session[$key];
         }
 
         return null;
     }
 
     /**
-     * Set key the session key
-     * TODO: save key in database
+     * Set a session variable
      * @param  string  $key
-     * @param  string|array  $value
+     * @param  mixed  $value
      * @return void
      */
     public function set(string $key, mixed $value): void
     {
-        $_SESSION[$key] = $value;
+        $session = &$this->getSession();
+        $session[$key] = $value;
     }
 }
